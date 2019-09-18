@@ -8,14 +8,20 @@ public class FezMove : MonoBehaviour
 
     public Animator anim;
     public float MovementSpeed = 5f;
-    public float Gravity = 0f;
+    public float Gravity = 1f;
+    float startGravity;
+    float oldY;
     public CharacterController charController;
     private FacingDirection _myFacingDirection;
-    public float JumpHeight = 1f;
+    public float JumpHeight = 0f;
     public bool _jumping = false;
     private float degree = 0;
 
-
+    private void Start()
+    {
+        startGravity = Gravity;
+        oldY = transform.position.y;
+    }
     public FacingDirection CmdFacingDirection
     {
 
@@ -37,7 +43,7 @@ public class FezMove : MonoBehaviour
         else
             Horizontal = 0;
 
-        if (Input.GetKeyDown(KeyCode.Space) && !_jumping)
+        if (Input.GetKeyDown(KeyCode.Space) && !_jumping && Grounded())
         {
             _jumping = true;
             StartCoroutine(JumpingWait());
@@ -59,6 +65,16 @@ public class FezMove : MonoBehaviour
     private void MoveCharacter(float moveFactor)
     {
         Vector3 trans = Vector3.zero;
+        Debug.Log("Please: " +oldY  + " " + transform.position.y);
+        if (oldY > transform.position.y)
+        {
+            Gravity = startGravity * 20.5f;
+        }
+        else
+        {
+            Gravity = startGravity;
+        }
+        oldY = transform.position.y;
         if (_myFacingDirection == FacingDirection.Front)
         {
             trans = new Vector3(Horizontal * moveFactor, -Gravity * moveFactor, 0f);
@@ -77,10 +93,15 @@ public class FezMove : MonoBehaviour
         }
         if (_jumping)
         {
+            if (!Input.GetButton("Jump"))
+            {
+                _jumping = false;
+                goto Skip;
+            }
             transform.Translate(Vector3.up * JumpHeight * Time.deltaTime);
         }
 
-
+        Skip:
         charController.SimpleMove(trans);
     }
     public void UpdateToFacingDirection(FacingDirection newDirection, float angle)
@@ -96,5 +117,15 @@ public class FezMove : MonoBehaviour
         yield return new WaitForSeconds(0.35f);
         //Debug.Log ("Returned jump to false");
         _jumping = false;
+    }
+    public bool Grounded()
+    {
+        Debug.Log("foo");
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, -transform.up, out hit, 1.0f))
+        {
+            return true;
+        }
+        return false;
     }
 }
